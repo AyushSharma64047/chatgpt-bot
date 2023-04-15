@@ -30,7 +30,7 @@
       },
       "OPENAI_API": {
         "description": "get api key : openai.com",
-        "value": "",
+        "value": "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",
         "required": true
       }
     },
