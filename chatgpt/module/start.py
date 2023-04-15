@@ -11,30 +11,34 @@ import requests
 import os
 import json
 import random
-import asyncio
 from pyrogram import *
 from pyrogram.types import *
 from pyrogram import Client as ren 
 from pyrogram.errors import MessageNotModified
-from chatgpt.module.what import *
+from pykillerx.helper.what import *
 from config import OPENAI_API 
 
-CMD_HANDLER = ["!", "/"] # your change handler
-
-cmd = CMD_HANDLER
-
-@ren.on_message(filters.command(["ai", "ask"], cmd) & filters.private | filters.group)
+@ren.on_message(filters.command("ask") & filters.group)
 async def chatgpt(c: Client, m: Message):
-    randydev = (m.text.split(None, 1)[1] if len(m.command) != 1 else None)
-    if not randydev:
-       await m.reply(f"use command <code>/{m.command[0]} [question]</code> to ask questions using the API.")
-       return
-    headers = {"Content-Type": "application/json", "Authorization": f"Bearer {OPENAI_API}"}
-    json_data = {"model": "gpt-3.5-turbo", "messages": [{"role": "user", "content": randydev}]}
+    if len(m.command) == 1:
+        return await m.reply(f"use command <code>.{m.command[0]} [question]</code> to ask questions using the API.")
+    randydev = m.text.split(" ", maxsplit=1)[1]
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {OPENAI_API}",
+    }
+
+    json_data = {
+        "model": "text-davinci-003",
+        "prompt": randydev,
+        "max_tokens": 200,
+        "temperature": 0,
+    }
+    ran = await m.reply("Wait a moment looking for your answer..")
     try:
-        response = (await http.post("https://api.openai.com/v1/chat/completions", headers=headers, json=json_data)).json()
-        await c.send_chat_action(m.chat.id, enums.ChatAction.TYPING)
-        await asyncio.sleep(2)
-        await c.send_message(m.chat.id, response["choices"][0]["message"]["content"], reply_to_message_id=m.id)
+        response = (await http.post("https://api.openai.com/v1/completions", headers=headers, json=json_data)).json()
+        await ran.edit(response["choices"][0]["text"])
+    except MessageNotModified:
+        pass
     except Exception:
-        await c.send_message(m.chat.id, "Yahh, sorry i can't get your answer.", reply_to_message_id=m.id)
+        await ran.edit("Yahh, sorry i can't get your answer.")
